@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# close all open windows
+wmctrl -l | while read p; do  \
+	wmctrl -i -c $(echo $p | awk {'print $1'}); \
+done
+
+# wait for the windows to close
+sleep 1
+
+# if all windows were closed, shutdown
+if [ $(wmctrl -l | wc -l) -eq 0 ]; then
+	/sbin/shutdown -h now
+else
+	# switch to the first window that was not closed
+	wmctrl -a "$(wmctrl -l | head -n 1 | awk '{print substr($0, index($0,$4))}')"
+fi

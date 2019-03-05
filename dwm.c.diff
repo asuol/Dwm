@@ -1,0 +1,57 @@
+--- dwm-6.1/dwm.c	2015-11-08 22:11:48.000000000 +0000
++++ dwm-6.1_SAFE_SHUTDOWN/dwm.c	2019-01-13 21:54:21.671946638 +0000
+@@ -62,7 +62,7 @@
+ enum { SchemeNorm, SchemeSel, SchemeLast }; /* color schemes */
+ enum { NetSupported, NetWMName, NetWMState,
+        NetWMFullscreen, NetActiveWindow, NetWMWindowType,
+-       NetWMWindowTypeDialog, NetClientList, NetLast }; /* EWMH atoms */
++       NetWMWindowTypeDialog, NetClientList, NetCloseWindow, NetLast }; /* EWMH atoms */
+ enum { WMProtocols, WMDelete, WMState, WMTakeFocus, WMLast }; /* default atoms */
+ enum { ClkTagBar, ClkLtSymbol, ClkStatusText, ClkWinTitle,
+        ClkClientWin, ClkRootWin, ClkLast }; /* clicks */
+@@ -540,6 +540,11 @@
+ 		}
+ 		pop(c);
+ 	}
++	else if(cme->message_type == netatom[NetCloseWindow]) {
++		Arg arg;
++		arg.v = (void *) c;
++		killclient(&arg);
++	}
+ }
+ 
+ void
+@@ -1016,13 +1021,22 @@
+ void
+ killclient(const Arg *arg)
+ {
+-	if (!selmon->sel)
++	Client *c;
++
++	if(arg->v) {
++		c = (Client *) arg->v;
++	}
++	else {
++		c = selmon->sel;
++	}
++
++	if (!c)
+ 		return;
+-	if (!sendevent(selmon->sel, wmatom[WMDelete])) {
++	if (!sendevent(c, wmatom[WMDelete])) {
+ 		XGrabServer(dpy);
+ 		XSetErrorHandler(xerrordummy);
+ 		XSetCloseDownMode(dpy, DestroyAll);
+-		XKillClient(dpy, selmon->sel->win);
++		XKillClient(dpy, c->win);
+ 		XSync(dpy, False);
+ 		XSetErrorHandler(xerror);
+ 		XUngrabServer(dpy);
+@@ -1575,6 +1589,7 @@
+ 	netatom[NetWMWindowType] = XInternAtom(dpy, "_NET_WM_WINDOW_TYPE", False);
+ 	netatom[NetWMWindowTypeDialog] = XInternAtom(dpy, "_NET_WM_WINDOW_TYPE_DIALOG", False);
+ 	netatom[NetClientList] = XInternAtom(dpy, "_NET_CLIENT_LIST", False);
++	netatom[NetCloseWindow] = XInternAtom(dpy, "_NET_CLOSE_WINDOW", False);
+ 	/* init cursors */
+ 	cursor[CurNormal] = drw_cur_create(drw, XC_left_ptr);
+ 	cursor[CurResize] = drw_cur_create(drw, XC_sizing);
